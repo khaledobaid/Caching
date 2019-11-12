@@ -94,6 +94,10 @@ namespace Microsoft.Extensions.Caching.StackExchangeRedis
             var creationTime = DateTimeOffset.UtcNow;
 
             var absoluteExpiration = GetAbsoluteExpiration(creationTime, options);
+            
+            RedisValue updatedValue = value;
+            if (_options.Serializer != null)
+                updatedValue = _options.Serializer.Invoke(value);
 
             var result = _cache.ScriptEvaluate(SetScript, new RedisKey[] { _instance + key },
                 new RedisValue[]
@@ -101,7 +105,7 @@ namespace Microsoft.Extensions.Caching.StackExchangeRedis
                         absoluteExpiration?.Ticks ?? NotPresent,
                         options.SlidingExpiration?.Ticks ?? NotPresent,
                         GetExpirationInSeconds(creationTime, absoluteExpiration, options) ?? NotPresent,
-                        value
+                        updatedValue
                 });
         }
 
@@ -129,6 +133,10 @@ namespace Microsoft.Extensions.Caching.StackExchangeRedis
             var creationTime = DateTimeOffset.UtcNow;
 
             var absoluteExpiration = GetAbsoluteExpiration(creationTime, options);
+            
+            RedisValue updatedValue = value;
+            if (_options.Serializer != null)
+                updatedValue = _options.Serializer.Invoke(value);
 
             await _cache.ScriptEvaluateAsync(SetScript, new RedisKey[] { _instance + key },
                 new RedisValue[]
@@ -136,7 +144,7 @@ namespace Microsoft.Extensions.Caching.StackExchangeRedis
                         absoluteExpiration?.Ticks ?? NotPresent,
                         options.SlidingExpiration?.Ticks ?? NotPresent,
                         GetExpirationInSeconds(creationTime, absoluteExpiration, options) ?? NotPresent,
-                        value
+                        updatedValue
                 });
         }
 
@@ -253,6 +261,9 @@ namespace Microsoft.Extensions.Caching.StackExchangeRedis
 
             if (results.Length >= 3 && results[2].HasValue)
             {
+                 if (_options.Deserializer != null)
+                    return _options.Deserializer.Invoke(results[2]);
+
                 return results[2];
             }
 
@@ -291,6 +302,9 @@ namespace Microsoft.Extensions.Caching.StackExchangeRedis
 
             if (results.Length >= 3 && results[2].HasValue)
             {
+                 if (_options.Deserializer != null)
+                    return _options.Deserializer.Invoke(results[2]);
+
                 return results[2];
             }
 
